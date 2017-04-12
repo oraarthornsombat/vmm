@@ -1,0 +1,21 @@
+PAGE FAULT: Virtual Address 783 contained in page 3 causes a page fault
+LOADED: Page 3 is loaded into frame 0
+PAGE FAULT: Virtual Address 2872 contained in page 11 causes a page fault
+LOADED: Page 11 is loaded into frame 1
+it's already in page table - wrong
+PAGE FAULT: Virtual Address 2159 contained in page 8 causes a page fault
+LOADED: Page 8 is loaded into frame 2
+PAGE FAULT: Virtual Address 1348 contained in page 5 causes a page fault
+LOADED: Page 5 is loaded into frame 3
+PAGE FAULT: Virtual Address 3747 contained in page 14 causes a page fault
+LOADED: Page 14 is loaded into frame 4
+it's already in page table - wrong
+PAGE FAULT: Virtual Address 612 contained in page 2 causes a page fault
+LOADED: Page 2 is loaded into frame 5
+PAGE FAULT: Virtual Address 2419 contained in page 9 causes a page fault
+LOADED: Page 9 is loaded into frame 6
+PAGE FAULT: Virtual Address 2637 contained in page 10 causes a page fault
+LOADED: Page 10 is loaded into frame 7
+it's already in page table - wrong
+PAGE FAULT: Virtual Address 1223 contained in page 4 causes a page fault
+PAGE FAULT: Virtual Address 1828 contained in page 7 causes a page fault
