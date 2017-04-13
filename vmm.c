@@ -40,6 +40,7 @@ int i,j;
 int lru_counter_array[VAS_NUMBER_OF_PAGES];
 int pageNumber;
 int frameNumber;
+int total_address_references = 0;
 
 
 // function headers
@@ -198,12 +199,15 @@ int main(int argc, char *argv[])
                // printf("page %d is count %d\n", i, lru_counter_array[i]);
 
             }
-        } //endfor
-    }
+        } //end for
+        total_address_references++;
+    } //end while
     
-
     fclose(backing_store);
     fclose(virtual_addresses_file);
+
+    printf("Total address references: %d\n", total_address_references);
+    printf("Page Faults: %d\n", num_page_faults );
     
     return 0;
 }
