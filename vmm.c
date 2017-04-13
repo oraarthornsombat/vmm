@@ -58,7 +58,8 @@ void checkTLB(int virtual_address){
     for (i=0; i<TLB_NUMBER_OF_ENTRIES;i++){
         if (TLB[i].page_number == pageNumber){
             TLBHit = 1;
-            printf("TLB Hit%s\n" );
+            printf("TLB Hit: page %d is contained in frame %d, found in TLB entry %d\n",pageNumber,TLB[i].frame_number,i );
+            break;
         }
     }
     if (TLBHit == 0){
@@ -104,6 +105,8 @@ void insertIntoPageTable(int pageNumber, int frameNumber){
             if (TLB[i].allocated==0){
                 printf("TLB LOAD: frame %d containing page %d is stored in TLB entry %d\n", frameNumber,pageNumber,i );
                 TLB[i].allocated=1;
+                TLB[i].page_number = pageNumber;
+                TLB[i].frame_number = frameNumber;
                 break;
             }
         }
@@ -214,6 +217,7 @@ int main(int argc, char *argv[])
     
     // read the virtual addresses file
     while ( fgets(str_address, BUFFER_SIZE, virtual_addresses_file) != NULL) {
+        TLBHit=0;
         virtual_address = atoi(str_address);
         
         //check TLB first
