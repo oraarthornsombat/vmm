@@ -42,8 +42,8 @@ int i,j;
 int lru_counter_array[VAS_NUMBER_OF_PAGES];
 int pageNumber;
 int frameNumber;
-int total_address_references = 0;
-int TLBHit = 0;
+double total_address_references = 0.0;
+double TLBHit = 0.0;
 int TLB_full=0;
 int tlb_hits=0;
 
@@ -79,7 +79,6 @@ void checkPageTable(int virtual_address){
     int offset = virtual_address % PAGE_SIZE;
     frameNumber= -1;
  
-    
     //search page table
      if (pageTable[pageNumber].valid==0){
         insertIntoPageTable(pageNumber, frameNumber);
@@ -89,12 +88,10 @@ void checkPageTable(int virtual_address){
         //it's in the page table and TLB!
         frameNumber = pageTable[pageNumber].frame_number;
         printf("FOUND: page %d is contained in frame %d\n", pageNumber, frameNumber);
-
-        
+        if (total_address_references>TLB_NUMBER_OF_ENTRIES){
+            replaceTLB();
+        }     
      }
-      
-
-     
 }
 
 void insertIntoPageTable(int pageNumber, int frameNumber){
@@ -120,14 +117,15 @@ void insertIntoPageTable(int pageNumber, int frameNumber){
                 //add to queue to determine FIFO replacement strategy
                 TLB_queue.push(pageNumber);
 
-
                 break;
             } 
           
 
         } //end for
 
+    if (total_address_references>TLB_NUMBER_OF_ENTRIES){
         replaceTLB();
+    }
 
     } //end if page is in page table
      
@@ -135,21 +133,21 @@ void insertIntoPageTable(int pageNumber, int frameNumber){
 }
 
 void replaceTLB(){
-     if (TLB_queue.size()==TLB_NUMBER_OF_ENTRIES){
-            popped = TLB_queue.front();
-            TLB_queue.pop();
-            TLB_queue.push(pageNumber);
-            for (i=0; i<TLB_NUMBER_OF_ENTRIES;i++){
-                if (TLB[i].page_number == popped){
-                    TLB[i].page_number = pageNumber;
-                    TLB[i].frame_number = pageTable[pageNumber].frame_number;
-                    printf("TLB LOAD: frame %d containing page %d is stored in TLB entry %d\n", TLB[i].frame_number,pageNumber,i );
+     
+    popped = TLB_queue.front();
+    TLB_queue.pop();
+    TLB_queue.push(pageNumber);
+    for (i=0; i<TLB_NUMBER_OF_ENTRIES;i++){
+        if (TLB[i].page_number == popped){
+            TLB[i].page_number = pageNumber;
+            TLB[i].frame_number = pageTable[pageNumber].frame_number;
+            printf("TLB LOAD: frame %d containing page %d is stored in TLB entry %d\n", TLB[i].frame_number,pageNumber,i );
 
-                    break;
+            break;
 
-                }
-            }
-        } // end if
+        }
+    }
+  
 }
 
 void loadBackingStore(int pageNumber){
@@ -169,11 +167,8 @@ void loadBackingStore(int pageNumber){
                 }
                 //1 for allocated
                 freeFrameList[j]=1;
-               // printf("allocated %d\n", j);
                 freeFrameCount--;
-              //  pageTable[availablePage].frame_number = j;
                 pageTable[pageNumber].frame_number = j;
-              //  pageTable[availablePage].page_number = pageNumber;
              
                 pageTable[pageNumber].valid= 1;
                 break;
@@ -182,14 +177,12 @@ void loadBackingStore(int pageNumber){
         if (freeFrameCount==0) {
             //if physical memory is full, aka the free frame list is empty
             //get least recently used frame to replace
-           // printf("all full! %d\n");
+          
            int frame_to_replace;
            int max_count = lru_counter_array[0];
            int frame_count;
            int oldPage;
            for (i=0; i<VAS_NUMBER_OF_PAGES;i++){
-                // printf("page %d is count %d\n",i,lru_counter_array[i] );
-                // printf("page %d's frame is frame %d\n",i,pageTable[i].frame_number );
                 frame_count = lru_counter_array[i];
                 if (frame_count > max_count){
                     max_count = frame_count;
@@ -199,7 +192,6 @@ void loadBackingStore(int pageNumber){
            }
 
            frame_to_replace = pageTable[oldPage].frame_number;
-           // printf("frame to replace %d\n",frame_to_replace );
            //now load in backing store
            for (i=0; i<PAGE_SIZE;i++){
                 physicalMemory[frame_to_replace][i]= buf[i];
@@ -251,10 +243,10 @@ int main(int argc, char *argv[])
         TLB[i].allocated = 0;
     }
     
-    printf("P=%d byte (page size)\n", PAGE_SIZE );
-    printf("VAS=%d pages\n", VAS_NUMBER_OF_PAGES );
-    printf("PAS=%d frames\n",PAS_NUMBER_OF_FRAMES );
-    printf("TLB=%d entries\n",TLB_NUMBER_OF_ENTRIES );
+    printf("P = %d byte (page size)\n", PAGE_SIZE );
+    printf("VAS = %d pages\n", VAS_NUMBER_OF_PAGES );
+    printf("PAS = %d frames\n",PAS_NUMBER_OF_FRAMES );
+    printf("TLB = %d entries\n\n",TLB_NUMBER_OF_ENTRIES );
 
     // read the virtual addresses file
     while ( fgets(str_address, BUFFER_SIZE, virtual_addresses_file) != NULL) {
@@ -265,21 +257,16 @@ int main(int argc, char *argv[])
         checkTLB(virtual_address);
         
         //determine page number from virtual address and check page table; else put page in page table + TLB
-       //checkPageTable(virtual_address);
 
          for (i=0; i<VAS_NUMBER_OF_PAGES; i++){
-            if (i!=pageNumber and pageTable[i].valid==1){
+            if (i!=pageNumber && pageTable[i].valid==1){
                 //increment if the page was not referenced
                 lru_counter_array[i]++;
-               // printf("page %d is count %d\n", i, lru_counter_array[i] );
             } else {
                 lru_counter_array[pageNumber] = 0;
-               // printf("page %d is count %d\n", i, lru_counter_array[i]);
 
             }
         } //end for
-            
-
 
         total_address_references++;
         printf("\n");
@@ -288,8 +275,9 @@ int main(int argc, char *argv[])
     fclose(backing_store);
     fclose(virtual_addresses_file);
 
-    printf("Total address references: %d\n", total_address_references);
+    printf("Total address references: %.0lf\n", total_address_references);
     printf("TLB Hits: %d\n", tlb_hits );
+    printf("TLB Hit Ratio: %f\n", tlb_hits/total_address_references);
     printf("Page Faults: %d\n\n", num_page_faults );
 
     printf("%s\n", "The contents of the page table after simulation: ");
@@ -311,12 +299,6 @@ int main(int argc, char *argv[])
         }
     }
     printf("\n");
-
-    while (!TLB_queue.empty()){
-        popped = TLB_queue.front();
-        printf("TLB QUEUE %d\n", popped);
-        TLB_queue.pop();
-    }
     
     return 0;
 }

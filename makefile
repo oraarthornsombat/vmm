@@ -1,5 +1,2 @@
-thread: vmm.c
-	g++ vmm.c -lm
-all: run
-run: vmm
-	./vmm
+vmm: vmm.cpp
+	g++ vmm.cpp -std=c++11
