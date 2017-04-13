@@ -123,14 +123,14 @@ void insertIntoPageTable(int pageNumber, int frameNumber){
 
                 break;
             } 
-                
+          
 
         } //end for
 
-      
+        replaceTLB();
 
     } //end if page is in page table
-      replaceTLB();
+     
             
 }
 
@@ -251,6 +251,11 @@ int main(int argc, char *argv[])
         TLB[i].allocated = 0;
     }
     
+    printf("P=%d byte (page size)\n", PAGE_SIZE );
+    printf("VAS=%d pages\n", VAS_NUMBER_OF_PAGES );
+    printf("PAS=%d frames\n",PAS_NUMBER_OF_FRAMES );
+    printf("TLB=%d entries\n",TLB_NUMBER_OF_ENTRIES );
+
     // read the virtual addresses file
     while ( fgets(str_address, BUFFER_SIZE, virtual_addresses_file) != NULL) {
         TLBHit=0;
@@ -285,9 +290,9 @@ int main(int argc, char *argv[])
 
     printf("Total address references: %d\n", total_address_references);
     printf("TLB Hits: %d\n", tlb_hits );
-    printf("Page Faults: %d\n", num_page_faults );
+    printf("Page Faults: %d\n\n", num_page_faults );
 
-    printf("The contents of the page table after simulation: %s\n" );
+    printf("%s\n", "The contents of the page table after simulation: ");
     for (i=0; i<VAS_NUMBER_OF_PAGES;i++){
         if (pageTable[i].valid==1){
             printf("Page %d in frame %d\n", i, pageTable[i].frame_number);
@@ -295,6 +300,17 @@ int main(int argc, char *argv[])
             printf("Page %d not in physical memory \n", i);
         }
     }
+    printf("\n");
+
+    printf("%s\n","The contents of each frame:" );
+    for (j=0; j<PAS_NUMBER_OF_FRAMES; j++){
+        for (i=0; i<VAS_NUMBER_OF_PAGES;i++){
+            if (pageTable[i].frame_number==j && pageTable[i].valid==1){
+                printf("Frame %d contains page %d \n",j, i );
+            }
+        }
+    }
+    printf("\n");
 
     while (!TLB_queue.empty()){
         popped = TLB_queue.front();
