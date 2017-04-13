@@ -215,18 +215,9 @@ void loadBackingStore(int pageNumber){
 // main opens necessary files and calls on getPage for every entry in the addresses file
 int main(int argc, char *argv[])
 {
-    //error if no input file entered
-    if (argc != 2) {
-        fprintf(stderr,"Please enter an input file of virtual addresses as well \n");
-        return -1;
-    } else {
-        virtual_addresses_file = fopen(argv[1], "r");
-        if (virtual_addresses_file == NULL) {
-            fprintf(stderr, "Error opening %s\n",argv[1]);
-            return -1;
-        }
-    }
-    
+   
+   
+    virtual_addresses_file = fopen("addresses.txt", "r");   
     backing_store = fopen("BACKING_STORE.bin", "rb");
     
     if (backing_store == NULL) {
