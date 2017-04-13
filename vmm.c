@@ -39,6 +39,7 @@ signed char buf[256];
 int i,j;
 int lru_counter_array[VAS_NUMBER_OF_PAGES];
 int pageNumber;
+int frameNumber;
 
 
 // function headers
@@ -51,7 +52,7 @@ void checkPageTable(int virtual_address){
     // obtain the page number and offset from the logical address
     pageNumber = virtual_address / PAGE_SIZE;
     int offset = virtual_address % PAGE_SIZE;
-    int frameNumber= -1;
+    frameNumber= -1;
  
     
     //search page table
@@ -66,8 +67,6 @@ void checkPageTable(int virtual_address){
         
      }
      
-        
-
 }
 
 void insertIntoPageTable(int pageNumber, int frameNumber){
@@ -115,11 +114,38 @@ void loadBackingStore(int pageNumber){
         if (freeFrameCount==0) {
             //if physical memory is full, aka the free frame list is empty
             //get least recently used frame to replace
-           printf("all full! %d\n");
+           // printf("all full! %d\n");
+           int frame_to_replace;
+           int max_count = lru_counter_array[0];
+           int frame_count;
+           int oldPage;
            for (i=0; i<VAS_NUMBER_OF_PAGES;i++){
-                printf("page %d is count %d\n",i,lru_counter_array[i] );
-                printf("page %d's frame is frame %d\n",i,pageTable[i].frame_number );
+                // printf("page %d is count %d\n",i,lru_counter_array[i] );
+                // printf("page %d's frame is frame %d\n",i,pageTable[i].frame_number );
+                frame_count = lru_counter_array[i];
+                if (frame_count > max_count){
+                    max_count = frame_count;
+                    oldPage = i;
+                }
+
            }
+
+           frame_to_replace = pageTable[oldPage].frame_number;
+           // printf("frame to replace %d\n",frame_to_replace );
+           //now load in backing store
+           for (i=0; i<PAGE_SIZE;i++){
+                physicalMemory[frame_to_replace][i]= buf[i];
+            }
+
+            //load into the new page
+
+             pageTable[pageNumber].frame_number = frame_to_replace;
+
+             frameNumber = frame_to_replace;
+
+             pageTable[oldPage].valid = 0;
+             pageTable[pageNumber].valid = 1;
+
             
 
         }
