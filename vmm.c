@@ -19,6 +19,7 @@ struct pageData {
 struct TLBData {
     int page_number;
     int frame_number;
+    int allocated;
 };
 
 int physicalMemory[PAS_NUMBER_OF_FRAMES][FRAME_SIZE]; // physical memory implemented as a 1D array (0...7) of 1D arrays (0...255)
@@ -41,13 +42,30 @@ int lru_counter_array[VAS_NUMBER_OF_PAGES];
 int pageNumber;
 int frameNumber;
 int total_address_references = 0;
+int TLBHit = 0;
 
 
 // function headers
+void checkTLB(int virtual_address);
 void checkPageTable(int virtual_address);
 void insertIntoPageTable(int pageNumber, int frameNumber);
 void loadBackingStore(int pageNumber);
 void insertIntoTLB(int pageNumber, int frameNumber);
+
+void checkTLB(int virtual_address){
+    //if in TLB, set TLBHit to 1
+    pageNumber = virtual_address / PAGE_SIZE;
+    for (i=0; i<TLB_NUMBER_OF_ENTRIES;i++){
+        if (TLB[i].page_number == pageNumber){
+            TLBHit = 1;
+            printf("TLB Hit%s\n" );
+        }
+    }
+    if (TLBHit == 0){
+        printf("TLB Miss: page %d is not in the TLB \n", pageNumber);
+        checkPageTable(virtual_address);
+    }
+}
 
 void checkPageTable(int virtual_address){
     // obtain the page number and offset from the logical address
@@ -72,16 +90,24 @@ void checkPageTable(int virtual_address){
 
 void insertIntoPageTable(int pageNumber, int frameNumber){
 
-            //page fault
-            num_page_faults++;
-            printf("PAGE FAULT: Virtual Address %d contained in page %d causes a page fault\n", virtual_address, pageNumber);
-            //load the page stored in backing store into the first free frame
-            loadBackingStore(pageNumber);
-            if (pageTable[pageNumber].valid==1){
-            //get the frame number associated with it
-            frameNumber = pageTable[pageNumber].frame_number;
-            printf("LOADED: Page %d is loaded into frame %d\n",pageNumber,frameNumber );
+    //page fault
+    num_page_faults++;
+    printf("PAGE FAULT: Virtual Address %d contained in page %d causes a page fault\n", virtual_address, pageNumber);
+    //load the page stored in backing store into the first free frame
+    loadBackingStore(pageNumber);
+    if (pageTable[pageNumber].valid==1){
+        //get the frame number associated with it
+        frameNumber = pageTable[pageNumber].frame_number;
+        printf("LOADED: Page %d is loaded into frame %d\n",pageNumber,frameNumber );
+        //load into TLB
+        for (i=0; i<TLB_NUMBER_OF_ENTRIES;i++){
+            if (TLB[i].allocated==0){
+                printf("TLB LOAD: frame %d containing page %d is stored in TLB entry %d\n", frameNumber,pageNumber,i );
+                TLB[i].allocated=1;
+                break;
             }
+        }
+    }
             
 }
 
@@ -181,13 +207,20 @@ int main(int argc, char *argv[])
     for (i=0; i< VAS_NUMBER_OF_PAGES; i++){
         pageTable[i].valid = 0;
     }
+    //initialize TLB to say it's empty
+     for (i=0; i< TLB_NUMBER_OF_ENTRIES; i++){
+        TLB[i].allocated = 0;
+    }
     
     // read the virtual addresses file
     while ( fgets(str_address, BUFFER_SIZE, virtual_addresses_file) != NULL) {
         virtual_address = atoi(str_address);
-      
+        
+        //check TLB first
+        checkTLB(virtual_address);
+        
         //determine page number from virtual address and check page table; else put page in page table + TLB
-        checkPageTable(virtual_address);
+       //checkPageTable(virtual_address);
 
          for (i=0; i<VAS_NUMBER_OF_PAGES; i++){
             if (i!=pageNumber and pageTable[i].valid==1){
@@ -201,6 +234,7 @@ int main(int argc, char *argv[])
             }
         } //end for
         total_address_references++;
+        printf("\n");
     } //end while
     
     fclose(backing_store);
